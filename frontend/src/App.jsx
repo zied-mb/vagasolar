@@ -20,6 +20,7 @@ const Contact = lazy(() => import('./components/sections/Contact/Contact'));
 
 // Admin & Project Galleries
 const ProtectedRoute = lazy(() => import('./admin/components/ProtectedRoute'));
+const GuestRoute     = lazy(() => import('./admin/components/GuestRoute'));
 const AdminLogin = lazy(() => import('./admin/pages/AdminLogin'));
 const AdminLayout = lazy(() => import('./admin/components/AdminLayout'));
 const AdminDashboard = lazy(() => import('./admin/pages/AdminDashboard'));
@@ -194,7 +195,7 @@ function App() {
           <Routes>
             <Route path="/" element={<LandingPage darkMode={darkMode} setDarkMode={setDarkMode} />} />
 
-            <Route path="/admin/login" element={<AdminLogin />} />
+            <Route path="/admin/login" element={<GuestRoute><AdminLogin /></GuestRoute>} />
 
             <Route path="/admin" element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}>
               <Route index element={<AdminDashboard />} />
