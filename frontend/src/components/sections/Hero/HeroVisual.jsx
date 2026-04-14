@@ -40,7 +40,6 @@ const HeroVisual = ({ stats, currentStat }) => {
           whileHover={{ y: -5 }}
         >
           <div className="flex items-center md:items-start">
-            {/* Icon Container */}
             <div className="bg-gradient-to-r from-yellow-500 to-yellow-600 p-2 md:p-3 rounded-xl flex-shrink-0">
               {stats[currentStat].icon}
             </div>
@@ -70,7 +69,8 @@ const HeroVisual = ({ stats, currentStat }) => {
               </motion.p>
             </div>
           </div>
-        </motion.div>      </div>
+        </motion.div>
+      </div>
 
       {/* Energy production card - More Compact & Adjusted Position */}
       <motion.div
@@ -86,7 +86,6 @@ const HeroVisual = ({ stats, currentStat }) => {
         </div>
 
         <div className="flex items-end space-x-0.5 md:space-x-1 h-6 md:h-12 mb-1 md:mb-2 px-1">
-          {/* Bars - Scaled down for mobile */}
           <div className="w-1.5 md:w-3 bg-gradient-to-t from-green-400 to-green-600 rounded-t h-[30%] md:h-4"></div>
           <div className="w-1.5 md:w-3 bg-gradient-to-t from-green-400 to-green-600 rounded-t h-[60%] md:h-8"></div>
           <div className="w-1.5 md:w-3 bg-gradient-to-t from-green-400 to-green-600 rounded-t h-[45%] md:h-6"></div>

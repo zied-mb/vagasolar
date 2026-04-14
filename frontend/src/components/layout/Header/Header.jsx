@@ -1,5 +1,5 @@
-// src/components/layout/Header/Header.jsx
 import React, { useState, useRef, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { FiMenu, FiX, FiSun, FiMoon } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
 import { NAV_ITEMS } from '../../../constants/navigation';
@@ -8,10 +8,16 @@ import { useScrollSection } from '../../../hooks/useScrollSection';
 const Header = ({ darkMode, setDarkMode }) => {
   const [isOpen, setIsOpen] = useState(false);
   const headerRef = useRef(null);
+  const location = useLocation();
+  const navigate = useNavigate();
   const { scrolled, activeSection, handleSmoothScroll: scrollToSection } = useScrollSection();
 
   const handleSmoothScroll = (id) => {
-    scrollToSection(id);
+    if (location.pathname !== '/') {
+      navigate(`/#${id}`);
+    } else {
+      scrollToSection(id);
+    }
     setIsOpen(false);
   };
 
@@ -35,49 +41,44 @@ const Header = ({ darkMode, setDarkMode }) => {
     return () => document.body.classList.remove('overflow-hidden');
   }, [isOpen]);
 
-  // Updated gradient: changed orange to yellow tones
   const solarGradient = "bg-gradient-to-r from-amber-400 via-yellow-500 to-yellow-400";
   const solarGradientHover = "hover:from-amber-500 hover:via-yellow-600 hover:to-yellow-500";
-  
+
   return (
-    <header 
+    <header
       ref={headerRef}
-      className={`fixed w-full z-50 transition-all duration-300 ${
-        scrolled 
-          ? 'bg-white/95 dark:bg-gray-900/95 backdrop-blur-md shadow-md py-2' 
-          : 'bg-transparent py-4'
-      }`}
+      className={`fixed w-full z-50 transition-all duration-300 ${scrolled
+        ? 'bg-white/95 dark:bg-gray-900/95 backdrop-blur-md shadow-md py-2'
+        : 'bg-transparent py-4'
+        }`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center">
-          {/* Logo with Picture */}
-          <motion.div 
+          <motion.div
             className="flex-shrink-0 flex items-center cursor-pointer"
             onClick={() => handleSmoothScroll('home')}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >
-            <img 
-              src="/logo.png" 
-              alt="Vaga Solar Logo" 
-              className="w-16 h-16 object-contain" 
+            <img
+              src="/logo.png"
+              alt="Vaga Solar Logo"
+              className="w-16 h-16 object-contain"
             />
             <span className="ml-3 text-xl font-bold text-gray-900 dark:text-white">
               Vaga <span className="bg-clip-text text-transparent bg-gradient-to-r from-amber-300 to-yellow-500">Solar</span>
             </span>
           </motion.div>
 
-          {/* Desktop Navigation */}
           <nav className="hidden md:flex space-x-1">
             {NAV_ITEMS.map((item) => (
               <motion.button
                 key={item.id}
                 onClick={() => handleSmoothScroll(item.id)}
-                className={`px-4 py-2 rounded-full font-medium transition-all ${
-                  activeSection === item.id
-                    ? `${solarGradient} text-white shadow-lg`
-                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
-                }`}
+                className={`px-4 py-2 rounded-full font-medium transition-all ${activeSection === item.id
+                  ? `${solarGradient} text-white shadow-lg`
+                  : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+                  }`}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 aria-label={`Aller à ${item.name}`}
@@ -89,7 +90,6 @@ const Header = ({ darkMode, setDarkMode }) => {
 
           {/* Right Side */}
           <div className="flex items-center space-x-4">
-            {/* Dark Mode Toggle with Solar Theme */}
             <motion.button
               onClick={() => setDarkMode(!darkMode)}
               className={`p-2.5 rounded-full ${darkMode ? 'bg-yellow-400/20' : 'bg-gray-200'} transition-colors`}
@@ -103,14 +103,14 @@ const Header = ({ darkMode, setDarkMode }) => {
                 <FiMoon size={20} className="text-gray-700" />
               )}
             </motion.button>
-            
+
             {/* Solar-themed CTA Button */}
-            <motion.a 
+            <motion.a
               href="/#contact"
               className="hidden md:inline-flex items-center px-5 py-2.5 border border-transparent text-base font-medium rounded-full text-white shadow-lg transition-all"
               onClick={() => setIsOpen(false)}
               initial={{ background: "linear-gradient(135deg, #f59e0b, #eab308)" }}
-              whileHover={{ 
+              whileHover={{
                 scale: 1.05,
                 background: "linear-gradient(135deg, #fbbf24, #eab308)"
               }}
@@ -121,7 +121,7 @@ const Header = ({ darkMode, setDarkMode }) => {
               </svg>
               Devis Gratuit
             </motion.a>
-            
+
             {/* Mobile Menu Button */}
             <motion.button
               className="md:hidden p-2 rounded-full bg-gray-100 dark:bg-gray-800"
@@ -139,7 +139,7 @@ const Header = ({ darkMode, setDarkMode }) => {
       {/* Animated Mobile Navigation */}
       <AnimatePresence>
         {isOpen && (
-          <motion.div 
+          <motion.div
             className="md:hidden fixed inset-0 w-screen h-screen z-[60] bg-white/95 dark:bg-gray-900/95 backdrop-blur-lg pt-20 overflow-y-auto"
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -164,11 +164,10 @@ const Header = ({ darkMode, setDarkMode }) => {
                 <motion.button
                   key={item.id}
                   onClick={() => handleSmoothScroll(item.id)}
-                  className={`block w-full text-left px-5 py-3 rounded-xl text-lg font-medium transition-colors ${
-                    activeSection === item.id
-                      ? `${solarGradient} text-white shadow-md`
-                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
-                  }`}
+                  className={`block w-full text-left px-5 py-3 rounded-xl text-lg font-medium transition-colors ${activeSection === item.id
+                    ? `${solarGradient} text-white shadow-md`
+                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+                    }`}
                   whileHover={{ x: 5 }}
                   whileTap={{ scale: 0.98 }}
                 >
@@ -176,7 +175,7 @@ const Header = ({ darkMode, setDarkMode }) => {
                 </motion.button>
               ))}
               <div className="pt-4">
-                <motion.a 
+                <motion.a
                   href="/#contact"
                   className={`w-full flex justify-center items-center px-5 py-3.5 text-lg font-medium rounded-full text-white shadow-lg ${solarGradient} ${solarGradientHover} transition-all`}
                   onClick={() => setIsOpen(false)}

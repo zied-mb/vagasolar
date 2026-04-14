@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { FiMapPin, FiMail, FiPhone, FiClock, FiFacebook } from 'react-icons/fi';
+import { FiMapPin, FiMail, FiPhone, FiClock, FiFacebook, FiLinkedin, FiTwitter } from 'react-icons/fi';
 
 const ContactInfo = () => {
   return (
@@ -104,6 +104,26 @@ const ContactInfo = () => {
               whileTap={{ scale: 0.95 }}
             >
               <FiFacebook />
+            </motion.a>
+            <motion.a
+              href="https://www.linkedin.com/company/vaga-solar/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-r from-amber-400/20 to-yellow-500/20 text-amber-600 dark:text-amber-400 rounded-2xl flex items-center justify-center text-lg md:text-xl shadow-lg"
+              whileHover={{ scale: 1.1, backgroundColor: 'rgba(245, 158, 11, 0.3)', boxShadow: "0 10px 25px rgba(245, 158, 11, 0.3)" }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <FiLinkedin />
+            </motion.a>
+            <motion.a
+              href="https://x.com/intent/post?url=https%3A%2F%2Fvagasolar.tn%2F"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-r from-amber-400/20 to-yellow-500/20 text-amber-600 dark:text-amber-400 rounded-2xl flex items-center justify-center text-lg md:text-xl shadow-lg"
+              whileHover={{ scale: 1.1, backgroundColor: 'rgba(245, 158, 11, 0.3)', boxShadow: "0 10px 25px rgba(245, 158, 11, 0.3)" }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <FiTwitter />
             </motion.a>
           </div>
         </div>

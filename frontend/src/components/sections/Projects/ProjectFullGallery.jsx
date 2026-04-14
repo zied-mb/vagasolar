@@ -37,8 +37,8 @@ const ProjectFullGallery = ({ darkMode, setDarkMode }) => {
       <div className="pt-16 pb-8">
         <main className="relative overflow-hidden py-24 bg-gradient-to-br from-gray-50 via-yellow-50/30 to-gray-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
           {/* Background Decorative Elements (Synced with Home) */}
-          <div className="absolute inset-0 bg-gradient-to-br from-yellow-400/5 via-yellow-500/3 to-yellow-400/5 pointer-events-none"/>
-          
+          <div className="absolute inset-0 bg-gradient-to-br from-yellow-400/5 via-yellow-500/3 to-yellow-400/5 pointer-events-none" />
+
           {/* Decorative center solar flare effect (Synced with Home) */}
           <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-[800px] h-[800px] opacity-10 pointer-events-none">
             {[...Array(8)].map((_, i) => (
@@ -53,7 +53,7 @@ const ProjectFullGallery = ({ darkMode, setDarkMode }) => {
 
           <div className="max-w-7xl mx-auto px-6 relative z-10">
             {/* Top Navigation / Back Button */}
-            <motion.button 
+            <motion.button
               onClick={() => navigate('/#projects')}
               className="group flex items-center gap-3 text-gray-500 hover:text-gray-900 dark:hover:text-white transition-all mb-16"
               initial={{ opacity: 0, x: -20 }}
@@ -66,15 +66,15 @@ const ProjectFullGallery = ({ darkMode, setDarkMode }) => {
             </motion.button>
 
             {/* Page Header (Synced with Home patterns) */}
-            <motion.div className="text-center mb-24" initial={{opacity:0,y:30}} animate={{opacity:1,y:0}} transition={{duration:0.8}}>
-              <motion.div className="inline-flex items-center justify-center px-6 py-2.5 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-full border border-yellow-500/30 shadow-md" whileHover={{scale:1.03}}>
-                <FiSun className="text-yellow-500 mr-2 text-lg"/>
+            <motion.div className="text-center mb-24" initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }}>
+              <motion.div className="inline-flex items-center justify-center px-6 py-2.5 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-full border border-yellow-500/30 shadow-md" whileHover={{ scale: 1.03 }}>
+                <FiSun className="text-yellow-500 mr-2 text-lg" />
                 <span className="text-yellow-700 dark:text-yellow-400 font-medium uppercase tracking-widest text-[10px]">Archives Projets</span>
               </motion.div>
-              <motion.h1 className="mt-8 text-4xl md:text-6xl font-bold text-gray-900 dark:text-white leading-tight" initial={{opacity:0,y:20}} animate={{opacity:1,y:0}} transition={{duration:0.7,delay:0.2}}>
+              <motion.h1 className="mt-8 text-4xl md:text-6xl font-bold text-gray-900 dark:text-white leading-tight" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, delay: 0.2 }}>
                 Notre Portfolio <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-500 to-yellow-600 italic">Complet</span>
               </motion.h1>
-              <motion.p className="mt-5 text-lg text-gray-700 dark:text-gray-400 max-w-3xl mx-auto" initial={{opacity:0,y:20}} animate={{opacity:1,y:0}} transition={{duration:0.7,delay:0.4}}>
+              <motion.p className="mt-5 text-lg text-gray-700 dark:text-gray-400 max-w-3xl mx-auto" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, delay: 0.4 }}>
                 Découvrez l'intégralité de nos installations photovoltaïques à travers la Tunisie.
               </motion.p>
             </motion.div>
@@ -82,7 +82,7 @@ const ProjectFullGallery = ({ darkMode, setDarkMode }) => {
             {/* Grid Section */}
             <AnimatePresence mode="wait">
               {loading ? (
-                <motion.div 
+                <motion.div
                   key="loading"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
@@ -94,7 +94,7 @@ const ProjectFullGallery = ({ darkMode, setDarkMode }) => {
                   ))}
                 </motion.div>
               ) : projects.length > 0 ? (
-                <motion.div 
+                <motion.div
                   key="grid"
                   variants={container}
                   initial="hidden"
@@ -106,7 +106,7 @@ const ProjectFullGallery = ({ darkMode, setDarkMode }) => {
                   ))}
                 </motion.div>
               ) : (
-                <motion.div 
+                <motion.div
                   key="empty"
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}

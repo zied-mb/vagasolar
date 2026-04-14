@@ -1,5 +1,5 @@
 import React from 'react';
-import { FiFacebook, FiMapPin, FiPhone, FiMail } from 'react-icons/fi';
+import { FiFacebook, FiLinkedin, FiTwitter, FiMapPin, FiPhone, FiMail } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
 import VagaSpinner from '../../common/VagaSpinner';
 
@@ -72,6 +72,24 @@ const Footer = () => {
                 className="text-gray-400 hover:text-yellow-500 transition-colors"
               >
                 <FiFacebook size={20} />
+              </a>
+              <a
+                href="https://www.linkedin.com/company/vaga-solar/"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="LinkedIn"
+                className="text-gray-400 hover:text-yellow-500 transition-colors"
+              >
+                <FiLinkedin size={20} />
+              </a>
+              <a
+                href="https://x.com/intent/post?url=https%3A%2F%2Fvagasolar.tn%2F"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="X (Twitter)"
+                className="text-gray-400 hover:text-yellow-500 transition-colors"
+              >
+                <FiTwitter size={20} />
               </a>
             </div>
           </div>
