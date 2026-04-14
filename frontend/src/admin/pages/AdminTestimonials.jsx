@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiPlus, FiEdit2, FiTrash2, FiEye, FiEyeOff, FiX, FiStar, FiUploadCloud, FiCheck, FiShield } from 'react-icons/fi';
+import { FiPlus, FiEdit2, FiTrash2, FiEye, FiEyeOff, FiX, FiStar, FiUploadCloud, FiCheck, FiShield, FiCheckCircle, FiAlertTriangle } from 'react-icons/fi';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
@@ -15,6 +15,75 @@ const EMPTY = {
   order: 0 
 };
 
+// ─── Confirm Delete Modal ─────────────────────────────────────────────────
+const ConfirmDeleteModal = ({ onConfirm, onCancel, loading }) => (
+  <motion.div
+    className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center p-4"
+    initial={{ opacity: 0 }}
+    animate={{ opacity: 1 }}
+    exit={{ opacity: 0 }}
+  >
+    <motion.div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={onCancel} />
+    <motion.div
+      className="relative w-full max-w-sm bg-gray-900/95 border border-white/10 rounded-3xl overflow-hidden shadow-2xl shadow-black/60"
+      initial={{ y: 60, opacity: 0, scale: 0.96 }}
+      animate={{ y: 0, opacity: 1, scale: 1 }}
+      exit={{ y: 60, opacity: 0, scale: 0.96 }}
+      transition={{ type: 'spring', stiffness: 320, damping: 28 }}
+    >
+      <div className="h-1 w-full bg-gradient-to-r from-red-600 via-red-500 to-amber-500" />
+      <div className="p-7 space-y-5">
+        <div className="flex items-center justify-center w-14 h-14 rounded-2xl bg-red-500/10 border border-red-500/20 mx-auto">
+          <FiTrash2 size={24} className="text-red-400" />
+        </div>
+        <div className="text-center space-y-2">
+          <h3 className="text-white font-black text-lg tracking-tight">Supprimer ce témoignage ?</h3>
+          <p className="text-gray-400 text-sm leading-relaxed">
+            L'image sera également <span className="text-red-400 font-semibold">effacée de Cloudinary</span>. Cette action est irréversible.
+          </p>
+        </div>
+        <div className="flex gap-3 pt-1">
+          <button
+            onClick={onCancel}
+            disabled={loading}
+            className="flex-1 py-3 rounded-xl bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white font-bold text-sm tracking-wide border border-white/5 transition-all disabled:opacity-50"
+          >
+            Annuler
+          </button>
+          <motion.button
+            onClick={onConfirm}
+            disabled={loading}
+            whileHover={!loading ? { scale: 1.02 } : {}}
+            whileTap={!loading ? { scale: 0.97 } : {}}
+            className="flex-1 py-3 rounded-xl bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-amber-500 text-white font-black text-sm tracking-wide shadow-lg shadow-red-500/20 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+          >
+            {loading
+              ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              : <><FiTrash2 size={14} /> Confirmer</>
+            }
+          </motion.button>
+        </div>
+      </div>
+    </motion.div>
+  </motion.div>
+);
+
+// ─── Success Toast ──────────────────────────────────────────────────────────
+const Toast = ({ message }) => (
+  <motion.div
+    className="fixed bottom-6 right-6 z-[300] flex items-center gap-3 px-5 py-4 bg-gray-900/95 border border-emerald-500/30 rounded-2xl shadow-2xl shadow-black/50 backdrop-blur-md max-w-xs"
+    initial={{ opacity: 0, y: 24, scale: 0.95 }}
+    animate={{ opacity: 1, y: 0, scale: 1 }}
+    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+    transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+  >
+    <div className="flex-shrink-0 w-8 h-8 rounded-xl bg-emerald-500/15 flex items-center justify-center">
+      <FiCheckCircle size={16} className="text-emerald-400" />
+    </div>
+    <p className="text-white text-sm font-semibold">{message}</p>
+  </motion.div>
+);
+
 const AdminTestimonials = () => {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -23,6 +92,13 @@ const AdminTestimonials = () => {
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
+
+  // Delete confirmation state
+  const [confirmTarget, setConfirmTarget] = useState(null); // testimonial id to delete
+  const [deleting, setDeleting]           = useState(false);
+
+  // Success toast state
+  const [toast, setToast] = useState(''); // '' = hidden
 
   const fetch_ = () => {
     setLoading(true);
@@ -80,13 +156,29 @@ const AdminTestimonials = () => {
     finally { setSaving(false); }
   };
 
-  const handleDelete = async (id) => {
-    if (!window.confirm('Supprimer ce témoignage ? L\'image Cloudinary sera également effacée.')) return;
+  const handleDelete = (id) => {
+    setConfirmTarget(id);
+  };
+
+  const confirmDelete = async () => {
+    if (!confirmTarget) return;
+    setDeleting(true);
     try {
-      const res = await fetch(`${API_URL}/api/testimonials/${id}`, { method: 'DELETE', credentials: 'include' });
-      if (!res.ok) throw new Error('Échec suppression');
+      const res  = await fetch(`${API_URL}/api/testimonials/${confirmTarget}`, { method: 'DELETE', credentials: 'include' });
+      const data = await res.json();
+      if (!res.ok || !data.success) throw new Error(data.message || 'Échec suppression');
+
+      setConfirmTarget(null);
       fetch_();
-    } catch (err) { alert(err.message); }
+
+      setToast('Témoignage supprimé avec succès !');
+      setTimeout(() => setToast(''), 3500);
+    } catch (err) {
+      setConfirmTarget(null);
+      setError(err.message);
+    } finally {
+      setDeleting(false);
+    }
   };
 
   const toggleApproval = async (t) => {
@@ -258,6 +350,22 @@ const AdminTestimonials = () => {
             </motion.div>
           </motion.div>
         )}
+      </AnimatePresence>
+
+      {/* ── Confirm Delete Modal ────────────────────────────────────── */}
+      <AnimatePresence>
+        {confirmTarget && (
+          <ConfirmDeleteModal
+            onConfirm={confirmDelete}
+            onCancel={() => setConfirmTarget(null)}
+            loading={deleting}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* ── Success Toast ─────────────────────────────────────────────── */}
+      <AnimatePresence>
+        {toast && <Toast message={toast} />}
       </AnimatePresence>
     </div>
   );
