@@ -11,7 +11,7 @@ const EMPTY = {
   rating: 5,
   image: '',
   active: true,
-  isApproved: false, // Default for new admin-created too, can toggle
+  isApproved: false,
   order: 0
 };
 

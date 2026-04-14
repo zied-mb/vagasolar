@@ -117,6 +117,9 @@ const AdminProjects = () => {
   // Success toast state
   const [toast, setToast] = useState(''); // message string, '' = hidden
 
+  // Cleanup tracking state
+  const [imagesToDelete, setImagesToDelete] = useState([]);
+
   const fetchProjects = async () => {
     setLoading(true);
     setError('');
@@ -164,14 +167,24 @@ const AdminProjects = () => {
 
   useEffect(() => { fetchProjects(); }, []);
 
-  const openCreate = () => { setForm(EMPTY); setModal('create'); setError(''); };
+  const openCreate = () => { 
+    setForm(EMPTY); 
+    setModal('create'); 
+    setError(''); 
+    setImagesToDelete([]); 
+  };
   const openEdit = (p) => { 
     const sanitizedImages = p.images && p.images.length > 0 ? p.images : (p.image ? [{ url: p.image, public_id: 'legacy' }] : []);
     setForm({ ...p, images: sanitizedImages }); 
     setModal(p._id); 
     setError(''); 
+    setImagesToDelete([]);
   };
-  const closeModal = () => { setModal(null); setError(''); };
+  const closeModal = () => { 
+    setModal(null); 
+    setError(''); 
+    setImagesToDelete([]);
+  };
 
   const handleMultipleUpload = async (e) => {
     const files = Array.from(e.target.files);
@@ -217,6 +230,13 @@ const AdminProjects = () => {
   };
 
   const removeImage = (index) => {
+    const imgObj = form.images[index];
+    
+    // If the image has a valid public_id (not 'legacy' and not empty), mark it for deletion
+    if (imgObj && imgObj.public_id && imgObj.public_id !== 'legacy') {
+      setImagesToDelete(prev => [...prev, imgObj.public_id]);
+    }
+
     setForm(prev => ({
       ...prev,
       images: prev.images.filter((_, i) => i !== index)
@@ -244,6 +264,27 @@ const AdminProjects = () => {
 
       const data = await res.json();
       if (!res.ok) throw new Error(data.message);
+
+      // --- Cleanup Step ---
+      // If we have images marked for deletion, purge them from Cloudinary now
+      if (imagesToDelete.length > 0) {
+        try {
+          // Filter to ensure only valid strings are sent
+          const cleanIds = imagesToDelete.filter(id => id && typeof id === 'string');
+          
+          if (cleanIds.length > 0) {
+            await fetch(`${API_URL}/api/upload/cleanup-images`, {
+              method: 'POST',
+              credentials: 'include',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ publicIds: cleanIds }),
+            });
+          }
+        } catch (cleanupErr) {
+          console.error('[CLEANUP_SILENT_FAIL]', cleanupErr);
+          // We don't block the UI for cleanup failures, but we log them.
+        }
+      }
 
       closeModal();
       fetchProjects();

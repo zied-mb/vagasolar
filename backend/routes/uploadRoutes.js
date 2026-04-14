@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { upload } = require('../middleware/upload');
+const { upload, cloudinary } = require('../middleware/upload');
 const { protect } = require('../middleware/authMiddleware');
 
 /**
@@ -57,6 +57,25 @@ router.post('/multiple', protect, handleUpload('images', true), (req, res) => {
 router.post('/public', handleUpload('image'), (req, res) => {
   if (!req.file) return res.status(400).json({ success: false, message: 'Fichier manquant.' });
   res.status(200).json({ success: true, url: req.file.path });
+});
+
+/**
+ * @route   POST /api/upload/cleanup-images
+ * @desc    Batch delete images from Cloudinary (Admin)
+ */
+router.post('/cleanup-images', protect, async (req, res) => {
+  const { publicIds } = req.body;
+  if (!publicIds || !Array.isArray(publicIds) || publicIds.length === 0) {
+    return res.status(400).json({ success: false, message: 'Aucun ID public fourni.' });
+  }
+
+  try {
+    const result = await cloudinary.api.delete_resources(publicIds);
+    res.status(200).json({ success: true, result });
+  } catch (error) {
+    console.error('[CLEANUP_ERROR]', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
 });
 
 module.exports = router;
