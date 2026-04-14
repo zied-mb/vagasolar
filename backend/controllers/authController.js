@@ -11,9 +11,9 @@ const sendTokenCookie = (user, statusCode, res) => {
 
   res.cookie('token', token, {
     httpOnly: true,
-    secure:   isProduction,
-    sameSite: isProduction ? 'strict' : 'lax',
-    maxAge:   8 * 60 * 60 * 1000, // 8 hours
+    secure:   isProduction,           // HTTPS only in production
+    sameSite: isProduction ? 'none' : 'lax', // 'none' required for cross-site (Netlify → Render)
+    maxAge:   8 * 60 * 60 * 1000,    // 8 hours
   });
 
   res.status(statusCode).json({
@@ -50,7 +50,7 @@ exports.logout = (req, res) => {
     httpOnly: true,
     expires:  new Date(0),
     secure:   process.env.NODE_ENV === 'production',
-    sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
   });
   res.status(200).json({ success: true, message: 'Déconnexion réussie.' });
 };
