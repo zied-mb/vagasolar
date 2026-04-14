@@ -3,7 +3,7 @@ import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   FiGrid, FiUsers, FiZap, FiFolder, FiMessageSquare, FiMail,
-  FiLogOut, FiMenu, FiX, FiSun,
+  FiLogOut, FiMenu, FiX,
 } from 'react-icons/fi';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
