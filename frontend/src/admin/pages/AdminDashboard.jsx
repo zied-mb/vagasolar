@@ -132,7 +132,7 @@ const AdminDashboard = () => {
     } catch (err) { console.error('Deletion failed:', err); }
   };
 
-  const recentLeads = stats?.leads?.recent || [];
+  const recentLeads = (stats?.leads?.recent || []).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).slice(0, 3);
   const recentMessages = (stats?.messages?.recent || []).slice(0, 3);
   const leadGrowth = stats?.leadGrowth || [];
 
