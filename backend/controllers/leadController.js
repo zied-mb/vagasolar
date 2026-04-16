@@ -1,20 +1,34 @@
+const xss  = require('xss');
 const Lead = require('../models/Lead');
 const XLSX = require('xlsx');
 
 // ─── POST /api/leads  (PUBLIC) ────────────────────────────────────────────────
 exports.createLead = async (req, res) => {
   try {
-    const { nom, prenom, telephone, email, consommationMensuelle, typeBatiment, couvertureVoulue, resultat } = req.body;
+    // SECURITY — Field Whitelisting: Destructure only the expected guest fields.
+    // Any extra keys (e.g. status:'closed', _id, pdfDownloaded) in req.body are
+    // silently discarded, preventing mass-assignment and ID spoofing attacks.
+    const {
+      nom, prenom, telephone, email,
+      consommationMensuelle, typeBatiment, couvertureVoulue, resultat,
+    } = req.body;
 
     // Basic validation
     if (!nom || !prenom || !telephone || !consommationMensuelle || !typeBatiment || !resultat) {
       return res.status(400).json({ success: false, message: 'Champs obligatoires manquants.' });
     }
 
+    // SECURITY — XSS Sanitization: Strip HTML/script injection from all
+    // user-supplied strings before persisting to MongoDB.
     const lead = await Lead.create({
-      nom, prenom, telephone, email,
-      consommationMensuelle, typeBatiment, couvertureVoulue,
-      resultat,
+      nom:                   xss(String(nom).trim()),
+      prenom:                xss(String(prenom).trim()),
+      telephone:             xss(String(telephone).trim()),
+      email:                 email ? xss(String(email).trim()) : undefined,
+      consommationMensuelle: Number(consommationMensuelle),
+      typeBatiment:          xss(String(typeBatiment).trim()),
+      couvertureVoulue:      couvertureVoulue !== undefined ? Number(couvertureVoulue) : undefined,
+      resultat,              // Numeric/object — not user-rendered as HTML
     });
 
     res.status(201).json({ success: true, leadId: lead._id });

@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { io } from 'socket.io-client';
 import {
   FiGrid, FiUsers, FiZap, FiFolder, FiMessageSquare, FiMail,
-  FiLogOut, FiMenu, FiX,
+  FiLogOut, FiMenu, FiX, FiBell,
 } from 'react-icons/fi';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
@@ -20,7 +21,27 @@ const NAV = [
 
 const AdminLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const navigate = useNavigate();
+  const navigate    = useNavigate();
+
+  // ─── Real-time Admin Notification State ─────────────────────────────────────
+  const [toast, setToast]   = useState(null); // { name, type }
+  const socketRef            = useRef(null);
+
+  useEffect(() => {
+    // SECURITY: `withCredentials` sends the httpOnly auth cookie on the WebSocket
+    // upgrade handshake. The server middleware verifies the JWT and places this
+    // socket in the private 'admin' room — no other socket receives these events.
+    const socket = io(API_URL, { withCredentials: true });
+    socketRef.current = socket;
+
+    socket.on('new-message', (data) => {
+      setToast({ name: data.name || 'Anonyme', type: data.type || 'contact' });
+      // Auto-dismiss after 6 seconds
+      setTimeout(() => setToast(null), 6000);
+    });
+
+    return () => socket.disconnect();
+  }, []);
 
   const handleLogout = async () => {
     await fetch(`${API_URL}/api/auth/logout`, { method: 'POST', credentials: 'include' });
@@ -74,10 +95,50 @@ const AdminLayout = () => {
   return (
     <div className="min-h-screen bg-gray-950 flex text-white">
 
+      {/* ─── Real-time Admin Toast Notification ──────────────────────────────── */}
+      <AnimatePresence>
+        {toast && (
+          <motion.div
+            initial={{ opacity: 0, y: -20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -20, scale: 0.95 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+            className="fixed top-5 right-5 z-[9999] flex items-start gap-3 bg-gray-900 border border-amber-400/30 shadow-2xl shadow-black/60 rounded-2xl px-5 py-4 max-w-sm"
+          >
+            <div className="p-2 bg-amber-400/10 rounded-xl shrink-0 mt-0.5">
+              <FiBell className="text-amber-400" size={16} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-white text-sm font-bold">Nouveau message reçu</p>
+              <p className="text-gray-400 text-xs mt-0.5 truncate">
+                De : <span className="text-amber-300 font-semibold">{toast.name}</span>
+                {toast.type && toast.type !== 'contact' && (
+                  <span className="ml-1 text-gray-500">· {toast.type}</span>
+                )}
+              </p>
+              <a
+                href="/admin/messages"
+                className="inline-block mt-2 text-[11px] font-bold text-amber-400 hover:text-amber-300 uppercase tracking-widest transition-colors"
+              >
+                Voir la messagerie →
+              </a>
+            </div>
+            <button
+              onClick={() => setToast(null)}
+              className="text-gray-600 hover:text-gray-300 transition-colors shrink-0 mt-0.5"
+              aria-label="Fermer"
+            >
+              <FiX size={14} />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Desktop Sidebar — sticky, never scrolls */}
       <aside className="hidden lg:flex flex-col w-64 bg-gray-900/80 border-r border-white/5 backdrop-blur-sm shrink-0 sticky top-0 h-screen">
         <SidebarContent />
       </aside>
+
 
       {/* Mobile Sidebar */}
       <AnimatePresence>

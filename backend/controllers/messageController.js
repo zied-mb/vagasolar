@@ -1,3 +1,4 @@
+const xss     = require('xss');
 const Message = require('../models/Message');
 
 // ─── GET /api/messages (ADMIN) ───────────────────────────────────────────────
@@ -13,17 +14,32 @@ exports.getMessages = async (req, res) => {
 // ─── POST /api/messages (PUBLIC) ─────────────────────────────────────────────
 exports.createMessage = async (req, res) => {
   try {
-    const message = await Message.create(req.body);
-    
-    // Emit real-time notification to all connected clients (especially the admin)
+    // SECURITY — Field Whitelisting: Only extract explicitly allowed fields from
+    // req.body. Any other keys (e.g. status, role, _id) are silently ignored,
+    // preventing mass assignment / ID spoofing attacks.
+    const { name, email, content, type } = req.body;
+
+    // SECURITY — XSS Sanitization: Strip all HTML tags and script injection
+    // patterns from user-supplied strings before persisting to MongoDB.
+    const sanitizedPayload = {
+      name:    xss(String(name    || '').trim()),
+      email:   xss(String(email   || '').trim()),
+      content: xss(String(content || '').trim()),
+      type:    xss(String(type    || '').trim()),
+    };
+
+    const message = await Message.create(sanitizedPayload);
+
+    // SECURITY — Emit exclusively to the 'admin' socket room so that PII
+    // (name, email, message content) is never broadcast to public visitors.
     const io = req.app.get('io');
     if (io) {
-      io.emit('new-message', {
-        name:    message.name,
-        email:   message.email,
-        content: message.content,
-        type:    message.type,
-        createdAt: message.createdAt
+      io.to('admin').emit('new-message', {
+        name:      message.name,
+        email:     message.email,
+        content:   message.content,
+        type:      message.type,
+        createdAt: message.createdAt,
       });
     }
 

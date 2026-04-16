@@ -1,20 +1,45 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiSun, FiLock, FiMail, FiEye, FiEyeOff, FiAlertTriangle } from 'react-icons/fi';
+import { FiSun, FiLock, FiMail, FiEye, FiEyeOff, FiAlertTriangle, FiClock } from 'react-icons/fi';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
 const AdminLogin = () => {
   const navigate = useNavigate();
-  const [form,        setForm]        = useState({ email: '', password: '', website_url: '' });
-  const [showPass,    setShowPass]    = useState(false);
-  const [loading,     setLoading]     = useState(false);
-  const [error,       setError]       = useState('');
-  const [attempts,    setAttempts]    = useState(0);
-  const [lockedUntil, setLockedUntil] = useState(null);
+  const [form,        setForm]     = useState({ email: '', password: '', website_url: '' });
+  const [showPass,    setShowPass] = useState(false);
+  const [loading,     setLoading]  = useState(false);
+  const [error,       setError]    = useState('');
+  // Server-driven countdown: number of seconds remaining until the IP is unblocked.
+  // Set from the `retryAfter` field in the 429 response — never hardcoded.
+  const [countdown,   setCountdown] = useState(0);
+  const countdownRef                = useRef(null);
 
-  const isLocked = lockedUntil && Date.now() < lockedUntil;
+  const isLocked = countdown > 0;
+
+  // Tick the countdown down every second; clear when it reaches 0.
+  useEffect(() => {
+    if (countdown <= 0) return;
+    countdownRef.current = setInterval(() => {
+      setCountdown(prev => {
+        if (prev <= 1) {
+          clearInterval(countdownRef.current);
+          setError('');
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(countdownRef.current);
+  }, [countdown]);
+
+  // Format seconds as mm:ss for display
+  const formatCountdown = (s) => {
+    const m = Math.floor(s / 60);
+    const sec = s % 60;
+    return m > 0 ? `${m}m ${sec.toString().padStart(2, '0')}s` : `${sec}s`;
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -35,15 +60,17 @@ const AdminLogin = () => {
       });
       const data = await res.json();
 
+      if (res.status === 429) {
+        // Rate-limited: use the server-provided retryAfter (seconds) to drive
+        // the countdown. This is specific to THIS IP — other users are unaffected.
+        const seconds = data.retryAfter || 900;
+        setCountdown(seconds);
+        setError(data.message || `IP bloquée. Réessayez dans ${formatCountdown(seconds)}.`);
+        return;
+      }
+
       if (!res.ok) {
-        const newAttempts = attempts + 1;
-        setAttempts(newAttempts);
-        if (newAttempts >= 3) {
-          setLockedUntil(Date.now() + 30_000);
-          setError('Trop de tentatives. Veuillez attendre 30 secondes.');
-        } else {
-          setError(data.message || 'Identifiants incorrects.');
-        }
+        setError(data.message || 'Identifiants incorrects.');
         return;
       }
 
@@ -173,7 +200,12 @@ const AdminLogin = () => {
                     </svg>
                     Connexion...
                   </span>
-                ) : isLocked ? 'Patientez...' : 'Accéder au tableau de bord'}
+                ) : isLocked ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <FiClock size={15} />
+                    Réessayez dans {formatCountdown(countdown)}
+                  </span>
+                ) : 'Accéder au tableau de bord'}
               </motion.button>
             </form>
 

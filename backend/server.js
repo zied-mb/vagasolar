@@ -15,7 +15,6 @@ const helmet     = require('helmet');
 const hpp        = require('hpp');
 const mongoSanitize = require('express-mongo-sanitize');
 const cookieParser = require('cookie-parser');
-const rateLimit  = require('express-rate-limit');
 const morgan     = require('morgan');
 const logger     = require('./utils/logger');
 const connectDB  = require('./config/db');
@@ -96,17 +95,10 @@ app.use(mongoSanitize());
 // Prevent HTTP Parameter Pollution
 app.use(hpp());
 
-// ─── Rate Limiters ────────────────────────────────────────────────────────────
-const loginLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 10,
-  message: { success: false, message: 'Trop de tentatives. Réessayez dans 15 minutes.' },
-  standardHeaders: true,
-  legacyHeaders: false,
-});
-
 // ─── Routes ───────────────────────────────────────────────────────────────────
-app.use('/api/auth',         loginLimiter, require('./routes/authRoutes'));
+// loginLimiter is defined in middleware/loginLimiter.js and applied
+// surgically in authRoutes.js only to POST /login (not /logout or /me).
+app.use('/api/auth',         require('./routes/authRoutes'));
 app.use('/api/leads',        require('./routes/leadRoutes'));
 app.use('/api/steg-rates',   require('./routes/stegRateRoutes'));
 app.use('/api/projects',     require('./routes/projectRoutes'));
@@ -142,14 +134,58 @@ app.use((err, req, res, next) => {
 
 // ─── Start Server with Socket.IO ─────────────────────────────────────────────
 const http = require('http');
+const jwt  = require('jsonwebtoken');
 const { Server } = require('socket.io');
 
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
     origin: allowedOrigins,
-    methods: ["GET", "POST"],
-    credentials: true
+    methods: ['GET', 'POST'],
+    credentials: true,
+  },
+});
+
+// ─── Helper: Parse raw cookie header string into a key-value map ──────────────
+// Socket.IO handshakes carry the browser's httpOnly cookies automatically in
+// socket.handshake.headers.cookie — no client-side JS is needed or involved.
+const parseCookies = (cookieHeader = '') =>
+  Object.fromEntries(
+    cookieHeader
+      .split(';')
+      .map(c => c.trim().split('='))
+      .filter(([k]) => k)
+      .map(([k, ...v]) => [k.trim(), decodeURIComponent(v.join('=').trim())])
+  );
+
+// ─── Socket.IO Authentication Middleware ──────────────────────────────────────
+// SECURITY: Verifies the JWT from the httpOnly cookie before accepting the
+// WebSocket upgrade. Unauthenticated connections are allowed but will NOT be
+// placed in the 'admin' room and will never receive sensitive notifications.
+io.use((socket, next) => {
+  try {
+    const cookies = parseCookies(socket.handshake.headers.cookie || '');
+    const token   = cookies.token;
+
+    if (!token) {
+      // No token → public visitor connection (allowed, but not an admin)
+      socket.isAdmin = false;
+      return next();
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    if (decoded.role === 'admin') {
+      socket.userId  = decoded.id;
+      socket.isAdmin = true;
+    } else {
+      socket.isAdmin = false;
+    }
+    next();
+  } catch {
+    // Expired or tampered token — allow connection but deny admin privileges
+    socket.isAdmin = false;
+    next();
   }
 });
 
@@ -157,8 +193,13 @@ const io = new Server(server, {
 app.set('io', io);
 
 io.on('connection', (socket) => {
-  logger.info(`🔌 New socket connection: ${socket.id}`);
-  
+  if (socket.isAdmin) {
+    socket.join('admin');
+    logger.info(`🔐 Admin socket authenticated & joined 'admin' room: ${socket.id}`);
+  } else {
+    logger.info(`🔌 Public socket connected: ${socket.id}`);
+  }
+
   socket.on('disconnect', () => {
     logger.info(`🔌 Socket disconnected: ${socket.id}`);
   });

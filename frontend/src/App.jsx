@@ -1,14 +1,10 @@
 import React, { useState, Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { HelmetProvider, Helmet } from 'react-helmet-async';
-import { io } from 'socket.io-client';
-import Notification from './components/ui/Notification';
 
 import Header from './components/layout/Header/Header';
 import Footer from './components/layout/Footer/Footer';
 import ScrollToTopButton from './components/layout/ScrollToTopButton';
-
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
 // ─── Lazy Loaded Sections (Code Splitting for Performance) ───────────────────
 const Hero = lazy(() => import('./components/sections/Hero/Hero'));
@@ -151,9 +147,6 @@ function App() {
     return savedTheme === 'dark';
   });
 
-  // Real-time Notification State
-  const [rtNotify, setRtNotify] = useState({ show: false, message: '' });
-
   React.useEffect(() => {
     if (darkMode) {
       document.documentElement.classList.add('dark');
@@ -164,31 +157,13 @@ function App() {
     }
   }, [darkMode]);
 
-  // Socket.IO Listener Initialization
-  React.useEffect(() => {
-    const socket = io(API_URL, { withCredentials: true });
-
-    socket.on('connect', () => {
-
-    });
-
-    socket.on('new-message', (data) => {
-      setRtNotify({
-        show: true,
-        message: `Transmission réussie. Merci ${data.name.split(' ')[0]}, nous vous répondrons sous 24h.`
-      });
-    });
-
-    return () => socket.disconnect();
-  }, []);
+  // Socket.IO for real-time admin notifications is handled in the admin panel.
+  // The public landing page no longer maintains a socket connection — the
+  // 'new-message' event is emitted only to the private 'admin' room after
+  // the WebSocket auth middleware validates the admin JWT cookie.
 
   return (
     <HelmetProvider>
-      <Notification 
-        show={rtNotify.show} 
-        message={rtNotify.message} 
-        onDismiss={() => setRtNotify({ ...rtNotify, show: false })}
-      />
       <Router>
         <ScrollToHashElement />
         <Suspense fallback={<PageLoader />}>

@@ -2,18 +2,19 @@ const jwt  = require('jsonwebtoken');
 const User = require('../models/User');
 
 // ─── Helper: sign JWT and attach to httpOnly cookie ───────────────────────────
+// SECURITY: SameSite=None + Secure=true is required for cross-site deployments
+// (e.g., Netlify frontend → Render backend). The httpOnly flag prevents all
+// JavaScript access, mitigating XSS-based token theft completely.
 const sendTokenCookie = (user, statusCode, res) => {
   const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, {
     expiresIn: '8h',
   });
 
-  const isProduction = process.env.NODE_ENV === 'production';
-
   res.cookie('token', token, {
-    httpOnly: true,
-    secure:   isProduction,           // HTTPS only in production
-    sameSite: isProduction ? 'none' : 'lax', // 'none' required for cross-site (Netlify → Render)
-    maxAge:   8 * 60 * 60 * 1000,    // 8 hours
+    httpOnly: true,            // JS cannot read this cookie (XSS protection)
+    secure:   true,            // Must be HTTPS (required for SameSite=None)
+    sameSite: 'none',          // Required for cross-site Netlify → Render cookies
+    maxAge:   8 * 60 * 60 * 1000, // 8 hours in milliseconds
   });
 
   res.status(statusCode).json({
@@ -45,12 +46,14 @@ exports.login = async (req, res) => {
 };
 
 // ─── POST /api/auth/logout ────────────────────────────────────────────────────
+// SECURITY: Must use identical SameSite/Secure flags as login to ensure the
+// browser actually clears the cookie on cross-site requests.
 exports.logout = (req, res) => {
   res.cookie('token', '', {
     httpOnly: true,
+    secure:   true,
+    sameSite: 'none',
     expires:  new Date(0),
-    secure:   process.env.NODE_ENV === 'production',
-    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
   });
   res.status(200).json({ success: true, message: 'Déconnexion réussie.' });
 };
